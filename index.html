@@ -14,7 +14,7 @@
         
         var xhr = new XMLHttpRequest();
         xhr.onload = function(event) {
-          var l = JSON.parse(event.responseText);
+          var l = JSON.parse(xhr.responseText);
           if (l.type != "symlink") {
             alert("ref: hitdns/bin -> path: bin/latest is not a symlink");
             return;
@@ -38,7 +38,7 @@
           
           var xhr = new XMLHttpRequest();
           xhr.onload = function(event) {
-            var b = JSON.parse(event.responseText);
+            var b = JSON.parse(xhr.responseText);
             BINARIES = b;
             callback(b);
           };
