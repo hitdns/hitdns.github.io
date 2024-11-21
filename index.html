@@ -13,7 +13,7 @@
         }
         
         var xhr = new XMLHttpRequest();
-        xhr.onload = function(event) {
+        xhr.onloadend = function(event) {
           var l = JSON.parse(xhr.responseText);
           if (l.type != "symlink") {
             alert("ref: hitdns/bin -> path: bin/latest is not a symlink");
@@ -37,7 +37,7 @@
           var url = "https://api.github.com/repos/delta4chat/hitdns/contents/bin/" + latest + "?ref=bin";
           
           var xhr = new XMLHttpRequest();
-          xhr.onload = function(event) {
+          xhr.onloadend = function(event) {
             var b = JSON.parse(xhr.responseText);
             BINARIES = b;
             callback(b);
