@@ -1,0 +1,71 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>HitDNS Latest CI Artifacts Download</title>
+    <script type="text/javascript">
+      var LATEST;
+      var BINARIES;
+
+      function getLatest(callback) {
+        if (LATEST) {
+          callback(LATEST);
+          return;
+        }
+        
+        var xhr = new XMLHttpRequest();
+        xhr.onloadend = function(event) {
+          var l = JSON.parse(xhr.responseText);
+          if (l.type != "symlink") {
+            alert("ref: hitdns/bin -> path: bin/latest is not a symlink");
+            return;
+          }
+          l = l.target;
+          LATEST = l;
+          callback(l);
+        };
+        xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin/latest?ref=bin");
+        xhr.send();
+      }
+
+      function listBinaries(callback) {
+        if (BINARIES) {
+          callback(BINARIES);
+          return;
+        }
+
+        getLatest(function(latest) {
+          var url = "https://api.github.com/repos/delta4chat/hitdns/contents/bin/" + latest + "?ref=bin";
+          
+          var xhr = new XMLHttpRequest();
+          xhr.onloadend = function(event) {
+            var b = JSON.parse(xhr.responseText);
+            BINARIES = b;
+            callback(b);
+          };
+          xhr.open("GET", url);
+          xhr.send();
+        });
+      }
+
+      function main() {
+        listBinaries(function(binaries) {
+          var html = "HitDNS - Download links of latest CI builds: <br/>";
+          var binaries_len = binaries.length;
+          for (var i = 0; i < binaries_len; ++i) {
+            var it = binaries[i];
+            html += "<a href=\"" + it.download_url + "\">" + it.name + "</a> <br/>";
+          }
+          document.getElementById('binaries').innerHTML = html;
+        });
+      }
+
+      main();
+    </script>
+  </head>
+  <body>
+    <div id="binaries" style="font-size: 50px">
+      Loading data from GitHub API... <br/>
+      If you are stuck in the loading process, please enable JavaScript in your browser settings or plugins/addons.
+    </div>
+  </body>
+</html>

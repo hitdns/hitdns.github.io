@@ -1,71 +1,248 @@
 <!DOCTYPE HTML>
 <html>
-  <head>
-    <title>HitDNS Latest CI Artifacts Download</title>
-    <script type="text/javascript">
-      var LATEST;
-      var BINARIES;
+    <head>
+        <meta charset="utf-8"/>
+        <title>HitDNS Latest CI Artifacts Download</title>
+		<style type="text/css">
+			table {
+				border-collapse: collapse;
+				border-spacing: 0px;
+			}
 
-      function getLatest(callback) {
-        if (LATEST) {
-          callback(LATEST);
-          return;
-        }
-        
-        var xhr = new XMLHttpRequest();
-        xhr.onloadend = function(event) {
-          var l = JSON.parse(xhr.responseText);
-          if (l.type != "symlink") {
-            alert("ref: hitdns/bin -> path: bin/latest is not a symlink");
-            return;
-          }
-          l = l.target;
-          LATEST = l;
-          callback(l);
-        };
-        xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin/latest?ref=bin");
-        xhr.send();
-      }
+			table, th, td {
+				padding: 5px;
+				border: 1px solid black;
+			}
+		</style>
+        <script type="text/javascript">
+			var kvFallbackStorage = {};
+			if ((typeof Map) == 'function') {
+				kvFallbackStorage = new Map();
+			}
 
-      function listBinaries(callback) {
-        if (BINARIES) {
-          callback(BINARIES);
-          return;
-        }
+			function kvGet(key) {
+				if ((typeof sessionStorage) == 'object') {
+					return JSON.parse(sessionStorage.getItem(key));
+				}
 
-        getLatest(function(latest) {
-          var url = "https://api.github.com/repos/delta4chat/hitdns/contents/bin/" + latest + "?ref=bin";
-          
-          var xhr = new XMLHttpRequest();
-          xhr.onloadend = function(event) {
-            var b = JSON.parse(xhr.responseText);
-            BINARIES = b;
-            callback(b);
-          };
-          xhr.open("GET", url);
-          xhr.send();
-        });
-      }
+				if ((typeof Map) == 'function') {
+					return kvFallbackStorage.get(key);
+				}
+				return kvFallbackStorage[key];
+			}
+			function kvSet(key, value) {
+				if ((typeof sessionStorage) == 'object') {
+					return sessionStorage.setItem(key, JSON.stringify(value));
+				}
 
-      function main() {
-        listBinaries(function(binaries) {
-          var html = "HitDNS - Download links of latest CI builds: <br/>";
-          var binaries_len = binaries.length;
-          for (var i = 0; i < binaries_len; ++i) {
-            var it = binaries[i];
-            html += "<a href=\"" + it.download_url + "\">" + it.name + "</a> <br/>";
-          }
-          document.getElementById('binaries').innerHTML = html;
-        });
-      }
+				if ((typeof Map) == 'function') {
+					return kvFallbackStorage.set(key, value);
+				}
+				return (kvFallbackStorage[key] = value);
+			}
+			function kvClear() {
+				if ((typeof sessionStorage) == 'object') {
+					return sessionStorage.clear();
+				}
 
-      main();
-    </script>
-  </head>
-  <body>
-    <div id="binaries" style="font-size: 50px">
-      Loading data from GitHub API... <br/>
-      If you are stuck in the loading process, please enable JavaScript in your browser settings or plugins/addons.
-    </div>
-  </body>
+				if ((typeof Map) == 'function') {
+					return kvFallbackStorage.clear();
+				}
+				return (kvFallbackStorage = {});
+			}
+
+			function kvCheck() {
+				var METADATA_LAST_UPDATE = "metadata.lastUpdate";
+				kvGet(METADATA_LAST_UPDATE) || kvSet(METADATA_LAST_UPDATE, Date.now());
+				if (Math.abs(Date.now() - kvGet(METADATA_LAST_UPDATE)) > 10*60*1000) { // ten minutes
+					kvClear();
+				}
+			}
+			setTimeout(kvCheck, 0);
+			setInterval(kvCheck, 10*000);
+
+            function lsBin() {
+                return new Promise(function(resolve, reject) {
+					var list = kvGet("LIST");
+                    if (list) {
+                        resolve(list);
+                        return;
+                    }
+                    var xhr = new XMLHttpRequest();
+                    xhr.onloadend = function(event){
+                        var ls = JSON.parse(xhr.responseText);
+                        kvSet("LIST", ls);
+                        resolve(ls);
+                    };
+                    xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin?ref=bin");
+                    xhr.send();
+                });
+            }
+
+            function getLatest() {
+                return new Promise(function(resolve, reject) {
+					document.getElementById("updateStatus").innerHTML = "Get Latest...";
+					var latest = kvGet("LATEST");
+                    if (latest) {
+                        resolve(latest);
+                        return;
+                    }
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.onloadend = function(event){
+                        var l = JSON.parse(xhr.responseText);
+                        if (l.type != "symlink") {
+                            reject(new Error("ref: hitdns/bin -> path: bin/latest is not a symlink"));
+                            return;
+                        }
+                        l = l.target;
+                        kvSet("LATEST", l);
+                        resolve(l);
+                    };
+                    xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin/latest?ref=bin");
+                    xhr.send();
+                });
+            }
+
+            function listBinaries(dirname) {
+				document.getElementById("updateStatus").innerHTML = "Listing "+dirname+"...";
+                return new Promise(function(resolve, reject) {
+					var key = "binaries." + dirname;
+					var binaries = kvGet(key);
+                    if (binaries) {
+                        resolve(binaries);
+                        return;
+                    }
+
+                    var url = "https://api.github.com/repos/delta4chat/hitdns/contents/bin/" + dirname + "?ref=bin";
+                    var xhr = new XMLHttpRequest();
+                    xhr.onloadend = function(event){
+                        var b = JSON.parse(xhr.responseText);
+						kvSet(key, b);
+                        resolve(b);
+                    };
+                    xhr.open("GET", url);
+                    xhr.send();
+                });
+            }
+
+            function listLatest() {
+                return new Promise(function(resolve, reject) {
+					getLatest()
+					.then(listBinaries)
+					.then(resolve)
+					.catch(reject);
+				});
+            }
+
+			function fileSize(bytes) {
+				var K = 1024;
+				var M = 1024*K;
+				var G = 1024*M;
+				var T = 1024*G;
+
+				if (bytes < K) {
+					return ""+bytes+" "+(bytes == 1 ? "byte" : "bytes");
+				}
+				if (bytes < M) {
+					return ""+(bytes/K).toFixed(3)+" KiB";
+				}
+				if (bytes < G) {
+					return ""+(bytes/M).toFixed(3)+" MiB";
+				}
+				if (bytes < T) {
+					return ""+(bytes/G).toFixed(3)+" GiB";
+				}
+				return ""+(bytes/T)+" TiB";
+			}
+
+            function updateBinaries(binaries) {
+                var html = "HitDNS - Download links of CI builds: <br/>";
+                var listof = true;
+
+                var binaries_len = binaries.length;
+                for (var i = 0; i < binaries_len; ++i) {
+                    var it = binaries[i];
+                    if (listof) {
+                        listof = false;
+                        html += '<span style="font-size: 25px;"> (List of ' + it.path.split("/")[1] + ') </span> <br/>';
+						//html += '<table><thead><tr><th>File</th><th>Size</th></tr></thead><tbody>';
+						html += '<table><tbody><tr><td>File</td><td>Size</td></tr>';
+                    }
+					html += '<tr><td><a href="' + it.download_url + '">' + it.name + '</a></td><td>' + fileSize(it.size) + '</td></tr>';
+                }
+				html += '<tr><td>File</td><td>Size</td></tr></tbody></table>';
+
+                document.getElementById("binaries").innerHTML = html;
+				document.getElementById("updateStatus").innerHTML = "OK";
+            }
+
+            function updateLatest() {
+                return new Promise(function(resolve, reject) {
+					listLatest()
+					.then(updateBinaries)
+					.then(resolve)
+					.catch(reject)
+				});
+            }
+
+            function main() {
+                return new Promise(function(resolve, reject) {
+					updateLatest().catch(reject);
+
+					document.getElementById("buildSelect").onchange = function(event) {
+						var selected = event.target.value;
+						if (selected == "latest") {
+							updateLatest().catch(asyncErrorHandler);
+						} else {
+							listBinaries(selected).then(updateBinaries).catch(asyncErrorHandler);
+						}
+					};
+
+					lsBin().then(function(ls) {
+						var html = '<option value="latest">Latest</option>';
+						var ls_len = ls.length;
+						for (var i = 0; i < ls_len; ++i) {
+							var it = ls[i];
+							if (it.type != "dir") {
+								continue;
+							}
+							html += '<option value="' + it.name + '">' + it.name + '</option>';
+						}
+						document.getElementById("buildSelect").innerHTML = html;
+					});
+				});
+            }
+
+			function asyncErrorHandler(err) {
+				alert("error (from promise): "+err+"\n"+err.stack);
+			}
+			function syncErrorHandler(err) {
+				alert("error (from sync): "+err+"\n"+err.stack);
+			}
+
+            setTimeout(function(){
+                try {
+                    main().catch(asyncErrorHandler);
+                } catch(err) {
+					syncErrorHandler(err);
+                }
+            }, 0);
+        </script>
+    </head>
+    <body>
+        <h1 id="binariesTitle">HitDNS Latest CI Artifacts Download</h1>
+        <div>
+            select build by date/commit:
+            <select id="buildSelect">
+				<option value="latest">Latest</option>
+            </select>
+        </div>
+        <hr/>
+		Status: <span id="updateStatus">Idle</span><br/>
+        <div id="binaries" style="font-size: 50px">
+            Loading data from GitHub API... <br/>
+            If you are stuck in the loading process, please enable JavaScript in your browser settings or plugins/addons.
+        </div>
+    </body>
 </html>
