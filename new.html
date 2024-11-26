@@ -1,158 +1,215 @@
 <!DOCTYPE HTML>
 <html>
-  <head>
-    <title>HitDNS Latest CI Artifacts Download</title>
-    <script type="text/javascript">
-      var LATEST;
-      var BINARIES = {};
-      var LIST;
+    <head>
+        <meta charset="utf-8"/>
+        <title>HitDNS Latest CI Artifacts Download</title>
+        <script type="text/javascript">
+            var LATEST;
+            var BINARIES = {};
+            var LIST;
 
-      function lsBin() {
-				return new Promise((resolve, reject) => {
-					if (LIST) {
-						resolve(LIST);
-						return;
-					}
-					var xhr = new XMLHttpRequest();
-					xhr.onloadend = (event) => {
-						var ls = JSON.parse(xhr.responseText);
-						LIST = ls;
-						resolve(ls);
-					};
-					xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin?ref=bin");
-					xhr.send();
-				});
-      }
+            function lsBin() {
+                return new Promise(function(resolve, reject){
+                    if (LIST) {
+                        resolve(LIST);
+                        return;
+                    }
+                    var xhr = new XMLHttpRequest();
+                    xhr.onloadend = function(event){
+                        var ls = JSON.parse(xhr.responseText);
+                        LIST = ls;
+                        resolve(ls);
+                    };
+                    xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin?ref=bin");
+                    xhr.send();
+                });
+            }
 
-      function getLatest() {
-				return new Promise((resolve, reject) => {
-        	if (LATEST) {
-          	resolve(LATEST);
-	          return;
-  	      }
-        
-    	    var xhr = new XMLHttpRequest();
-					xhr.onloadend = (event) => {
-          	var l = JSON.parse(xhr.responseText);
-          	if (l.type != "symlink") {
-            	reject(new Error("ref: hitdns/bin -> path: bin/latest is not a symlink"));
-            	return;
-          	}
-          	l = l.target;
-          	LATEST = l;
-          	resolve(l);
-        	};
-        	xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin/latest?ref=bin");
-        	xhr.send();
-				});
-      }
+            function getLatest() {
+                return new Promise(function(resolve, reject){
+                    if (LATEST) {
+                        resolve(LATEST);
+                        return;
+                    }
 
-      function listBinaries(dirname) {
-				return new Promise((resolve, reject) => {
-					if (BINARIES[dirname]) {
-          	resolve(BINARIES[dirname]);
-	          return;
-  	      }
+                    var xhr = new XMLHttpRequest();
+                    xhr.onloadend = function(event){
+                        var l = JSON.parse(xhr.responseText);
+                        if (l.type != "symlink") {
+                            reject(new Error("ref: hitdns/bin -> path: bin/latest is not a symlink"));
+                            return;
+                        }
+                        l = l.target;
+                        LATEST = l;
+                        resolve(l);
+                    };
+                    xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin/latest?ref=bin");
+                    xhr.send();
+                });
+            }
 
-					var url = "https://api.github.com/repos/delta4chat/hitdns/contents/bin/" + dirname + "?ref=bin";
+            function listBinaries(dirname) {
+                return new Promise(function(resolve, reject){
+                    if (BINARIES[dirname]) {
+                        resolve(BINARIES[dirname]);
+                        return;
+                    }
 
-					var xhr = new XMLHttpRequest();
-					xhr.onloadend = (event) => {
-          	var b = JSON.parse(xhr.responseText);
-          	BINARIES[dirname] = b;
-          	resolve(b);
-        	};
-        	xhr.open("GET", url);
-	        xhr.send();
-				});
-      }
+                    var url = "https://api.github.com/repos/delta4chat/hitdns/contents/bin/" + dirname + "?ref=bin";
+                    var xhr = new XMLHttpRequest();
+                    xhr.onloadend = function(event){
+                        var b = JSON.parse(xhr.responseText);
+                        BINARIES[dirname] = b;
+                        resolve(b);
+                    };
+                    xhr.open("GET", url);
+                    xhr.send();
+                });
+            }
 
-      function listLatest() {
-				return getLatest().then(listBinaries);
-      }
+            function listLatest() {
+                return new Promise(function(resolve, reject){ getLatest().then(listBinaries).then(resolve).catch(reject) });
+            }
 
-      function updateBinaries(binaries) {
-        var html = "HitDNS - Download links of latest CI builds: <br/>";
-				var listof = true;
+            function updateBinaries(binaries) {
+                var html = "HitDNS - Download links of CI builds: <br/>";
+                var listof = true;
 
-        var binaries_len = binaries.length;
-        for (var i = 0; i < binaries_len; ++i) {
-					var it = binaries[i];
-					if (listof) {
-						listof = false;
-						html += "===== List of "+it.path.split("/")[1]+" ===== <br/>";
-					}
-          html += "<a href=\"" + it.download_url + "\">" + it.name + "</a> <br/>";
-        }
-        document.getElementById("binaries").innerHTML = html;
-        });
-      }
+                var binaries_len = binaries.length;
+                for (var i = 0; i < binaries_len; ++i) {
+                    var it = binaries[i];
+                    if (listof) {
+                        listof = false;
+                        html += '<span style="font-size: 25px;"> (List of ' + it.path.split("/")[1] + ') </span> <br/>';
+                    }
+                    html += '<a href="' + it.download_url + '">' + it.name + '</a> <br/>';
+                }
+                document.getElementById("binaries").innerHTML = html;
+            }
 
-      function updateLatest() {
-				return listLatest().then(updateBinaries);
-      }
+            function updateLatest() {
+                return new Promise(function(resolve, reject){ listLatest().then(updateBinaries).then(resolve).catch(reject) });
+            }
 
-      function main() {
-				return new Promise((resolve, reject) => {
-					var dti = document.getElementById("datetimeInput");
-					if (dti.type == "text") {
-						// datetime-local in unsupported browser
-						dti.type = "hidden";
-					} else {
-						var bdi = document.getElementById("basicDatetimeInput");
-						bdi.style.display = "none";
-					}
-					var url = new URL(document.location.href);
-					if (url.searchParams.get("manually")=="1") {
-						var year = Number(url.searchParams.get("year"));
-						var month = Number(url.searchParams.get("month"));
-						var day = Number(url.searchParams.get("day"));
-						var hour = Number(url.searchParams.get("hour"));
-						var minute = Number(url.searchParams.get("minute"));
-						var second = Number(url.searchParams.get("second"));
-						var basicDatetime = ""+year+"-"+month+"-"+day+"T"+hour+":"+minute+":"+second+"Z";
+            function main() {
+                return new Promise(function(resolve, reject){
+                    var datetimeLocalSupported = false;
+                    var dti = document.getElementById("datetimeInput");
+                    if (dti.type == "text") {
+                        // datetime-local in unsupported browser
+                        var div = document.getElementById("datetimeInputDiv");
+                        div.style.display = "none";
+                    } else {
+                        datetimeLocalSupported = true;
+                        var div = document.getElementById("basicDatetimeInputDiv");
+                        div.style.display = "none";
+                    }
+                    var url = new URL(document.location.href);
+                    if (url.searchParams.get("manually")=="1") {
+                        var commit = url.searchParams.get("commit");
 
-						var datetime = new Date(url.searchParams.get("datetime")+"Z");
+                        var year = url.searchParams.get("year");
+                        var month = url.searchParams.get("month");
+                        var day = url.searchParams.get("day");
+                        var hour = url.searchParams.get("hour");
+                        var minute = url.searchParams.get("minute");
+                        var second = url.searchParams.get("second");
 
-						if (datetime.toJSON() == null){
-							datetime = basicDatetime;
-						}
-						if (datetime.toJSON()) {
-						}
-					} else {
-						updateLatest();
-					}
-					resolve();
-				});
-      }
+                        var basicDatetime = new Date(""+year+"-"+month+"-"+day+"T"+hour+":"+minute+":"+second+"Z");
+                        var datetime = new Date(url.searchParams.get("datetime")+"Z");
+                        if (datetimeLocalSupported) {
+                            document.getElementById("datetimeInput").value = datetime.toISOString().slice(0, -8);
+                        } else {
+                            document.getElementById("bdiYear").value = year;
+                            document.getElementById("bdiMonth").value = month;
+                            document.getElementById("bdiDay").value = day;
+                            document.getElementById("bdiHour").value = hour;
+                            document.getElementById("bdiMinute").value = minute;
+                            document.getElementById("bdiSecond").value = second;
+                        }
 
-			setTimeout(() => {
-        try {
-          main().catch(alert);
-        } catch(err) {
-					alert(err);
-        }
-      }, 0);
-    </script>
-  </head>
-  <body>
-    <h1 id="binariesTitle">HitDNS Latest CI Artifacts Download</h1>
-    <div>
-	    or select build by date or commit:<br/>
-      <form method="GET" action="">
-      <div id="basicDatetimeInput">
-      Date/Time: <input name="year" type="number" min="2024" max="2030"/>-<input name="mouth" type="number" min="1" max="12"/>-<input name="day" type="number" min="1" max="31"/> | <input name="hour" type="number" min="0" max="23"/>:<input name="minute" type="number" min="0" max="59"/>:<input name="second" type="number" min="0" max="5"/><br/>
-      </div>
-      Date/Time: <input id="datetimeInput" name="datetime" type="datetime-local" step="any" min="2024-01-01T00:00" max="2030-01-01T00:00"/><br/>
-      Commit: <input name="commit" type="text" pattern="([0-9]|[a-f])*" minlength="6" maxlength="40"/><br/>
-      <input type="hidden" name="manually" value="1"/>
-      <input type="submit"/>
-      </form>
-    </div>
-    <hr/>
-    <div id="binaries" style="font-size: 50px">
-      Loading data from GitHub API... <br/>
-      If you are stuck in the loading process, please enable JavaScript in your browser settings or plugins/addons.
-    </div>
-  </body>
+                        if (datetime.toJSON() == null) {
+                            datetime = basicDatetime;
+                        }
+                        if (commit || datetime.toJSON()) {
+                            return lsBin().then(function(ls){
+                                var ls_len = ls.length;
+                                var min_diff = Number.MAX_SAFE_INTEGER;
+                                var selected;
+                                for (var i = 0; i < ls_len; ++i) {
+                                    var it = ls[i];
+                                    if (it.type != "dir") {
+                                        continue;
+                                    }
+
+                                    var tmp = it.name.split("__");
+                                    var date = tmp[0].split("_");
+                                    date[1] = date[1].replace("-", ":").replace("-", ":").replace("-", ":");
+                                    date = new Date(date.join("T")+"Z");
+                                    var sha = tmp.pop();
+                                    tmp = null;
+
+                                    if (commit && commit.length >= 6 && sha.startsWith(commit)) {
+                                        return it.name;
+                                    }
+                                    if (!datetime.toJSON()) {
+                                        // invalid Date object
+                                        break;
+                                    }
+                                    var diff = Math.abs(date.getTime() - datetime.getTime());
+                                    if (min_diff > diff) {
+                                        min_diff = diff;
+                                        selected = it.name;
+                                    }
+                                }
+                                if (selected) {
+                                    return selected;
+                                } else {
+                                    throw new Error("not found");
+                                }
+                            })
+                            .then(listBinaries)
+                            .then(updateBinaries)
+                            .catch(reject);
+                        } else {
+                            return updateLatest();
+                        }
+                    } else {
+                        return updateLatest();
+                    }
+                    resolve();
+                });
+            }
+
+            setTimeout(function(){
+                try {
+                    main().catch(function(err){ alert("error (from promise): "+err+"\n"+err.stack); });
+                } catch(err) {
+                    alert("error (from sync): "+err+"\n"+err.stack);
+                }
+            }, 0);
+        </script>
+    </head>
+    <body>
+        <h1 id="binariesTitle">HitDNS Latest CI Artifacts Download</h1>
+        <div>
+            or select build by date or commit:<br/>
+            <form method="GET" action="">
+                <div id="basicDatetimeInputDiv">
+                    Date/Time: <input id="bdiYear" name="year" type="number" min="2024" max="2030"/>-<input id="bdiMonth" name="month" type="number" min="1" max="12"/>-<input id="bdiDay" name="day" type="number" min="1" max="31"/> | <input id="bdiHour" name="hour" type="number" min="0" max="23"/>:<input id="bdiMinute" name="minute" type="number" min="0" max="59"/>:<input id="bdiSecond" name="second" type="number" min="0" max="5"/><br/>
+                </div>
+                <div id="datetimeInputDiv">
+                    Date/Time: <input id="datetimeInput" name="datetime" type="datetime-local" step="any" min="2024-01-01T00:00" max="2030-01-01T00:00"/><br/>
+                </div>
+                Commit: <input name="commit" type="text" pattern="([0-9]|[a-f])*" minlength="6" maxlength="40"/><br/>
+                <input type="hidden" name="manually" value="1"/>
+                <input type="submit"/>
+            </form>
+        </div>
+        <hr/>
+        <div id="binaries" style="font-size: 50px">
+            Loading data from GitHub API... <br/>
+            If you are stuck in the loading process, please enable JavaScript in your browser settings or plugins/addons.
+        </div>
+    </body>
 </html>
