@@ -1,0 +1,158 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>HitDNS Latest CI Artifacts Download</title>
+    <script type="text/javascript">
+      var LATEST;
+      var BINARIES = {};
+      var LIST;
+
+      function lsBin() {
+				return new Promise((resolve, reject) => {
+					if (LIST) {
+						resolve(LIST);
+						return;
+					}
+					var xhr = new XMLHttpRequest();
+					xhr.onloadend = (event) => {
+						var ls = JSON.parse(xhr.responseText);
+						LIST = ls;
+						resolve(ls);
+					};
+					xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin?ref=bin");
+					xhr.send();
+				});
+      }
+
+      function getLatest() {
+				return new Promise((resolve, reject) => {
+        	if (LATEST) {
+          	resolve(LATEST);
+	          return;
+  	      }
+        
+    	    var xhr = new XMLHttpRequest();
+					xhr.onloadend = (event) => {
+          	var l = JSON.parse(xhr.responseText);
+          	if (l.type != "symlink") {
+            	reject(new Error("ref: hitdns/bin -> path: bin/latest is not a symlink"));
+            	return;
+          	}
+          	l = l.target;
+          	LATEST = l;
+          	resolve(l);
+        	};
+        	xhr.open("GET", "https://api.github.com/repos/delta4chat/hitdns/contents/bin/latest?ref=bin");
+        	xhr.send();
+				});
+      }
+
+      function listBinaries(dirname) {
+				return new Promise((resolve, reject) => {
+					if (BINARIES[dirname]) {
+          	resolve(BINARIES[dirname]);
+	          return;
+  	      }
+
+					var url = "https://api.github.com/repos/delta4chat/hitdns/contents/bin/" + dirname + "?ref=bin";
+
+					var xhr = new XMLHttpRequest();
+					xhr.onloadend = (event) => {
+          	var b = JSON.parse(xhr.responseText);
+          	BINARIES[dirname] = b;
+          	resolve(b);
+        	};
+        	xhr.open("GET", url);
+	        xhr.send();
+				});
+      }
+
+      function listLatest() {
+				return getLatest().then(listBinaries);
+      }
+
+      function updateBinaries(binaries) {
+        var html = "HitDNS - Download links of latest CI builds: <br/>";
+				var listof = true;
+
+        var binaries_len = binaries.length;
+        for (var i = 0; i < binaries_len; ++i) {
+					var it = binaries[i];
+					if (listof) {
+						listof = false;
+						html += "===== List of "+it.path.split("/")[1]+" ===== <br/>";
+					}
+          html += "<a href=\"" + it.download_url + "\">" + it.name + "</a> <br/>";
+        }
+        document.getElementById("binaries").innerHTML = html;
+        });
+      }
+
+      function updateLatest() {
+				return listLatest().then(updateBinaries);
+      }
+
+      function main() {
+				return new Promise((resolve, reject) => {
+					var dti = document.getElementById("datetimeInput");
+					if (dti.type == "text") {
+						// datetime-local in unsupported browser
+						dti.type = "hidden";
+					} else {
+						var bdi = document.getElementById("basicDatetimeInput");
+						bdi.style.display = "none";
+					}
+					var url = new URL(document.location.href);
+					if (url.searchParams.get("manually")=="1") {
+						var year = Number(url.searchParams.get("year"));
+						var month = Number(url.searchParams.get("month"));
+						var day = Number(url.searchParams.get("day"));
+						var hour = Number(url.searchParams.get("hour"));
+						var minute = Number(url.searchParams.get("minute"));
+						var second = Number(url.searchParams.get("second"));
+						var basicDatetime = ""+year+"-"+month+"-"+day+"T"+hour+":"+minute+":"+second+"Z";
+
+						var datetime = new Date(url.searchParams.get("datetime")+"Z");
+
+						if (datetime.toJSON() == null){
+							datetime = basicDatetime;
+						}
+						if (datetime.toJSON()) {
+						}
+					} else {
+						updateLatest();
+					}
+					resolve();
+				});
+      }
+
+			setTimeout(() => {
+        try {
+          main().catch(alert);
+        } catch(err) {
+					alert(err);
+        }
+      }, 0);
+    </script>
+  </head>
+  <body>
+    <h1 id="binariesTitle">HitDNS Latest CI Artifacts Download</h1>
+    <div>
+	    or select build by date or commit:<br/>
+      <form method="GET" action="">
+      <div id="basicDatetimeInput">
+      Date/Time: <input name="year" type="number" min="2024" max="2030"/>-<input name="mouth" type="number" min="1" max="12"/>-<input name="day" type="number" min="1" max="31"/> | <input name="hour" type="number" min="0" max="23"/>:<input name="minute" type="number" min="0" max="59"/>:<input name="second" type="number" min="0" max="5"/><br/>
+      </div>
+      Date/Time: <input id="datetimeInput" name="datetime" type="datetime-local" step="any" min="2024-01-01T00:00" max="2030-01-01T00:00"/><br/>
+      Commit: <input name="commit" type="text" pattern="([0-9]|[a-f])*" minlength="6" maxlength="40"/><br/>
+      <input type="hidden" name="manually" value="1"/>
+      <input type="submit"/>
+      </form>
+    </div>
+    <hr/>
+    <div id="binaries" style="font-size: 50px">
+      Loading data from GitHub API... <br/>
+      If you are stuck in the loading process, please enable JavaScript in your browser settings or plugins/addons.
+    </div>
+  </body>
+</html>
