@@ -153,7 +153,7 @@
 				if (bytes < T) {
 					return ""+(bytes/G).toFixed(3)+" GiB";
 				}
-				return ""+(bytes/T)+" TiB";
+				return ""+(bytes/T).toFixed(3)+" TiB";
 			}
 
             function updateBinaries(binaries) {
@@ -242,7 +242,8 @@
 		Status: <span id="updateStatus">Idle</span><br/>
         <div id="binaries" style="font-size: 50px">
             Loading data from GitHub API... <br/>
-            If you are stuck in the loading process, please enable JavaScript in your browser settings or plugins/addons.
+			If you are stuck in the loading process, you can enable JavaScript in your browser settings or plugins/addons.<br/>
+			Or, if you dislike JavaScript, use this <a href="https://hitdns.pages.dev/">NO-JS version</a>.
         </div>
     </body>
 </html>
