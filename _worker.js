@@ -63,7 +63,12 @@ async function onFetch(request, env, ctx) {
 
     let binaries;
     if (build && build.length > 0 && build.toLowerCase() != 'latest') {
-        binaries = await listBinaries(build);
+        try {
+            binaries = await listBinaries(build);
+        } catch (err) {
+            // not found
+            binaries = await listLatest();
+        }
     } else {
         binaries = await listLatest();
     }

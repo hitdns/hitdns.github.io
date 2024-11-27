@@ -194,7 +194,7 @@
                 updateLatest().catch(reject);
 
                 document.getElementById("buildSelect").onchange = function (event) {
-                    var selected = event.target.value;
+                    var selected = document.getElementById("buildSelect").value;
                     kvSet("SELECTED", selected);
                     if (selected == "latest") {
                         updateLatest().catch(asyncErrorHandler);
@@ -218,7 +218,9 @@
 
                         html += '<option value="' + it.name + '"' + selected + '>' + it.name + '</option>';
                     }
-                    document.getElementById("buildSelect").innerHTML = html;
+                    var buildSelect = document.getElementById("buildSelect");
+                    buildSelect.innerHTML = html;
+                    setTimeout(buildSelect.onchange, 0);
                 });
             });
         }
