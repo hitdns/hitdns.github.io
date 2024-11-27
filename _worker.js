@@ -112,8 +112,8 @@ async function onFetch(request, env, ctx) {
     </form>
   </div>
   <hr/>
-  <h1>HitDNS - Download links of CI builds:</h1>
   <div style="font-size: 50px">
+  HitDNS - Download links of CI builds:
 `;
     let listof = true;
     for (let it of binaries) {
