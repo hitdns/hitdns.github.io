@@ -63,12 +63,7 @@ async function onFetch(request, env, ctx) {
 
     let binaries;
     if (build && build.length > 0 && build.toLowerCase() != 'latest') {
-        try {
-            binaries = await listBinaries(build);
-        } catch (err) {
-            // not found
-            binaries = await listLatest();
-        }
+        binaries = await listBinaries(build);
     } else {
         binaries = await listLatest();
     }
@@ -134,7 +129,7 @@ export default {
         try {
             return await onFetch(request, env, ctx);
         } catch (err) {
-            return new Response(`${Date.now()}\n${g.json_pre}\n${err}\n\n\n${err.stack}`, { status: 500 });
+            return new Response(`Error: ${err}\n\n\n${err.stack}\n\n${JSON.stringify(g, null, 2)}`, { status: 302, headers: { 'Location': '/' } });
         }
     }
 };
