@@ -93,8 +93,8 @@ async function onFetch(request, env, ctx) {
   <body>
   <h1 id="binariesTitle">HitDNS Latest CI Artifacts Download</h1>
   <div>
-    select build by date/commit:
     <form method="GET" action="">
+      select build by date/commit:
       <select id="buildSelect" name="build">
         <option value="latest">Latest</option>
 `;
@@ -111,7 +111,9 @@ async function onFetch(request, env, ctx) {
       <input type="submit"/>
     </form>
   </div>
-  <h1>HitDNS - Download links of CI builds:</h1> <hr/>
+  <hr/>
+  <div style="font-size: 50px">
+    <h1>HitDNS - Download links of CI builds:</h1>
 `;
     let listof = true;
     for (let it of binaries) {
@@ -122,7 +124,7 @@ async function onFetch(request, env, ctx) {
         }
         html += `<tr>  <td><a href="${it.download_url}">${it.name}</a></td> <td>${fileSize(it.size)}</td>  </tr>\n`;
     }
-    html += '<tr><td>File</td><td>Size</td></tr></tbody></table> </body></html>';
+    html += '<tr><td>File</td><td>Size</td></tr></tbody></table> </div> </body></html>';
 
     return new Response(html, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 }
