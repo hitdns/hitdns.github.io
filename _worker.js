@@ -129,7 +129,7 @@ export default {
         try {
             return await onFetch(request, env, ctx);
         } catch (err) {
-            return new Response(`Error: ${err}\n\n\n${err.stack}\n\n${JSON.stringify(g, null, 2)}`, { status: 302, headers: { 'Location': '/' } });
+            return new Response(`Error: ${err}\n\n\n${err.stack}\n\n${g.json_pre}`, { status: 302, headers: { 'Location': '/' } });
         }
     }
 };
