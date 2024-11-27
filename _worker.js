@@ -113,13 +113,13 @@ async function onFetch(request, env, ctx) {
   </div>
   <hr/>
   <div style="font-size: 50px">
-  HitDNS - Download links of CI builds:
+  HitDNS - Download links of CI builds: <br/>
 `;
     let listof = true;
     for (let it of binaries) {
         if (listof) {
             listof = false;
-            html += `<span style="font-size: 25px;"> (List of ${it.path.split("/")[1]}) </span> <br/><br/>\n`;
+            html += `<span style="font-size: 25px;"> (List of ${it.path.split("/")[1]}) </span> <br/>\n`;
             html += '<table><tbody><tr><td>File</td><td>Size</td></tr>\n';
         }
         html += `<tr>  <td><a href="${it.download_url}">${it.name}</a></td> <td>${fileSize(it.size)}</td>  </tr>\n`;
