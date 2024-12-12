@@ -23,9 +23,6 @@
                 return JSON.parse(sessionStorage.getItem(key));
             }
 
-            if ((typeof Map) == 'function') {
-                return kvFallbackStorage.get(key);
-            }
             return kvFallbackStorage[key];
         }
         function kvSet(key, value) {
@@ -33,9 +30,6 @@
                 return sessionStorage.setItem(key, JSON.stringify(value));
             }
 
-            if ((typeof Map) == 'function') {
-                return kvFallbackStorage.set(key, value);
-            }
             return (kvFallbackStorage[key] = value);
         }
         function kvClear() {
@@ -43,10 +37,7 @@
                 return sessionStorage.clear();
             }
 
-            if ((typeof Map) == 'function') {
-                return kvFallbackStorage.clear();
-            }
-            return (kvFallbackStorage = {});
+            return (kvFallbackStorage = { __proto__: null });
         }
 
         function kvCheck() {
