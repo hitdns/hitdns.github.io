@@ -173,7 +173,7 @@ async function onFetch(request, env, ctx) {
 	    if (it.name.indexOf("windows") == -1) {
 	        continue;
 	    }
-	} else if (macos.indexOf(os) != -1) {
+	} else if (macos.indexOf(os) != -1 || macos.indexOf(arch) != -1) {
 	    if (it.name.indexOf("mac") == -1) {
 	        continue;
 	    }
