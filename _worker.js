@@ -123,7 +123,7 @@ async function onFetch(request, env, ctx) {
     let windows = ["windows", "win", "w"];
     let macos = ["mac", "macos", "osx", "darwin", "m"];
 
-    let openwrt = ["openwrt", "wrt", "router", "mips", "w"];
+    let openwrt = ["openwrt", "wrt", "router", "mips", "r"];
     let amd64 = ["amd64", "x64", "x86-64", "x86_64", "64"];
     let i686 = ["x86", "i686", "32", "86"];
     let aarch64 = ["aarch64", "arm64", "a64"];
