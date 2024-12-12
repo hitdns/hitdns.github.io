@@ -59,6 +59,27 @@ function fileSize(bytes) {
 
 async function onFetch(request, env, ctx) {
     let url = new URL(request.url);
+    let path = url.pathname.slice(0);
+    let paths = path.split("/");
+    let search = { __proto__: null };
+    for (let key of url.searchParams.keys()) {
+        let lkey = key.toLowerCase();
+        if (search[lkey] !== undefined) {
+	    continue;
+	}
+	search[lkey] = url.searchParams.get(key);
+    }
+
+    let arch = search.arch?.toLowerCase();
+    let os = search.os?.toLowerCase();
+
+    if (!os) {
+	os = paths[1]?.toLowerCase();
+    }
+    if (!arch) {
+        arch = paths[2]?.toLowerCase();
+    }
+
     let build = url.searchParams.get("build");
 
     let binaries;
@@ -94,7 +115,69 @@ async function onFetch(request, env, ctx) {
         <option value="latest">Latest</option>
 `;
     let builds = await listBuilds();
+
+    let linux = ["linux", "lin", "l"];
+    let android = ["android", "and", "a"];
+    let netbsd = ["netbsd", "nbsd", "n"];
+    let freebsd = ["freebsd", "fbsd", "f"];
+    let windows = ["windows", "win", "w"];
+    let macos = ["mac", "macos", "osx", "darwin", "m"];
+
+    let openwrt = ["openwrt", "wrt", "router", "mips", "w"];
+    let amd64 = ["amd64", "x64", "x86-64", "x86_64", "64"];
+    let i686 = ["x86", "i686", "32", "86"];
+    let aarch64 = ["aarch64", "arm64", "a64"];
+    let armv7 = ["armv7", "arm", "arm32", "a32"];
+
     for (let it of builds) {
+	if (linux.indexOf(os) != -1 || linux.indexOf(arch) != -1) {
+	    if (it.name.indexOf("linux") == -1) {
+	        continue;
+	    }
+	} else if (android.indexOf(os) != -1 || android.indexOf(arch) != -1) {
+	    if (it.name.indexOf("android") == -1) {
+	        continue;
+	    }
+	} else if (netbsd.indexOf(os) != -1 || netbsd.indexOf(arch) != -1) {
+	    if (it.name.indexOf("netbsd") == -1) {
+	        continue;
+	    }
+	} else if (freebsd.indexOf(os) != -1 || freebsd.indexOf(arch) != -1) {
+	    if (it.name.indexOf("freebsd") == -1) {
+	        continue;
+	    }
+	} else if (windows.indexOf(os) != -1 || windows.indexOf(arch) != -1) {
+	    if (it.name.indexOf("windows") == -1) {
+	        continue;
+	    }
+	} else if (macos.indexOf(os) != -1) {
+	    if (it.name.indexOf("mac") == -1) {
+	        continue;
+	    }
+	}
+
+        if (openwrt.indexOf(arch) != -1 || openwrt.indexOf(os) != -1) {
+	    if (it.name.indexOf("mips") == -1) {
+	        continue;
+	    }
+	} else if (amd64.indexOf(arch) != -1 || amd64.indexOf(os) != -1) {
+	    if (it.name.indexOf("amd64") == -1) {
+	        continue;
+	    }
+	} else if (i686.indexOf(arch) != -1 || i686.indexOf(os) != -1) {
+	    if (it.name.indexOf("i686") == -1) {
+	        continue;
+	    }
+	} else if (aarch64.indexOf(arch) != -1 || aarch64.indexOf(os) != -1) {
+	    if (it.name.indexOf("aarch64") == -1) {
+	        continue;
+	    }
+	} else if (armv7.indexOf(arch) != -1 || armv7.indexOf(os) != -1) {
+	    if (it.name.indexOf("armv7") == -1) {
+	        continue;
+	    }
+	}
+
         let selected = '';
         if (it.name == build) {
             selected = ' selected="selected"';

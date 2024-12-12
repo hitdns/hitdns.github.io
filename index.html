@@ -16,10 +16,7 @@
         }
     </style>
     <script type="text/javascript">
-        var kvFallbackStorage = {};
-        if ((typeof Map) == 'function') {
-            kvFallbackStorage = new Map();
-        }
+        var kvFallbackStorage = { __proto__: null };
 
         function kvGet(key) {
             if ((typeof sessionStorage) == 'object') {
