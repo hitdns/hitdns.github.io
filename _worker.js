@@ -130,6 +130,29 @@ async function onFetch(request, env, ctx) {
     let armv7 = ["armv7", "arm", "arm32", "a32"];
 
     for (let it of builds) {
+        let selected = '';
+        if (it.name == build) {
+            selected = ' selected="selected"';
+        }
+        html += `<option value="${it.name}"${selected}>${it.name}</option>\n`
+    }
+    html += `
+      </select>
+      <input type="submit"/>
+    </form>
+  </div>
+  <hr/>
+  <div style="font-size: 50px">
+  HitDNS - Download links of CI builds: <br/>
+`;
+    let listof = true;
+    for (let it of binaries) {
+        if (listof) {
+            listof = false;
+            html += `<span style="font-size: 25px;"> (List of ${it.path.split("/")[1]}) </span> <br/>\n`;
+            html += '<table><tbody><tr><td>File</td><td>Size</td></tr>\n';
+        }
+
 	if (linux.indexOf(os) != -1 || linux.indexOf(arch) != -1) {
 	    if (it.name.indexOf("linux") == -1) {
 	        continue;
@@ -178,28 +201,6 @@ async function onFetch(request, env, ctx) {
 	    }
 	}
 
-        let selected = '';
-        if (it.name == build) {
-            selected = ' selected="selected"';
-        }
-        html += `<option value="${it.name}"${selected}>${it.name}</option>\n`
-    }
-    html += `
-      </select>
-      <input type="submit"/>
-    </form>
-  </div>
-  <hr/>
-  <div style="font-size: 50px">
-  HitDNS - Download links of CI builds: <br/>
-`;
-    let listof = true;
-    for (let it of binaries) {
-        if (listof) {
-            listof = false;
-            html += `<span style="font-size: 25px;"> (List of ${it.path.split("/")[1]}) </span> <br/>\n`;
-            html += '<table><tbody><tr><td>File</td><td>Size</td></tr>\n';
-        }
         html += `<tr>  <td><a href="${it.download_url}">${it.name}</a></td> <td>${fileSize(it.size)}</td>  </tr>\n`;
     }
     html += '<tr><td>File</td><td>Size</td></tr></tbody></table> </div> </body></html>';
